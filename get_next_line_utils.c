@@ -3,113 +3,102 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line_utils.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mruizzo <mruizzo@student.42.fr>            +#+  +:+       +#+        */
+/*   By: slucas-s <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/02/11 16:19:03 by mruizzo           #+#    #+#             */
-/*   Updated: 2022/02/11 18:17:14 by mruizzo          ###   ########.fr       */
+/*   Created: 2021/04/23 12:21:14 by slucas-s          #+#    #+#             */
+/*   Updated: 2021/04/23 12:21:16 by slucas-s         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
+#include <stdio.h>
+#include "../libft/libft.h"
 
-char	*ft_substr(char const *s, unsigned int start, size_t len)
-{
-	char			*str;
-	size_t			i;
-	unsigned int	j;
-
-	i = 0;
-	j = 0;
-	if ((unsigned int)ft_strlen(s) < start)
-	{
-		str = ft_calloc(1, sizeof(char));
-		if (!str)
-			return (NULL);
-		str[0] = 0;
-		return (str);
-	}
-	str = ft_calloc(((ft_strlen(s) + 1) - start), sizeof(char));
-	if (!str)
-		return (NULL);
-	while (s[start] != 0 && i < len)
-	{
-		str[i] = (char)s[start];
-		i++;
-		start++;
-	}
-	return (str);
-}
-
-char	*ft_strjoin(char *s1, char *s2)
-{
-	char	*str;
-	size_t	len;
-	int		i;
-	int		j;
-
-	i = 0;
-	j = 0;
-	len = ft_strlen(s1);
-	len += ft_strlen(s2);
-	str = ft_calloc((len + 1), sizeof(char));
-	if (!str)
-		return (str);
-	while (s1[i] != 0)
-	{
-		str[i] = (char)s1[i];
-		i++;
-	}
-	while (s2[j] != 0)
-	{
-		str[i] = (char)s2[j];
-		i++;
-		j++;
-	}
-	free(s1);
-	return (str);
-}
-
-int	ft_strchr(char *s, char c)
+/* Returns the index of the \n in <line>
+if there is one. -1 if not founded. */
+int	ft_linelen (char *line)
 {
 	int	i;
 
-	i = 0;
-	if (!s)
+	if (!line)
 		return (-1);
-	while (s[i])
+	i = 0;
+	while (line[i])
 	{
-		if (s[i] == c)
+		if (line[i] == '\n')
 			return (i);
 		i++;
 	}
 	return (-1);
 }
 
-void	*ft_calloc(size_t count, size_t size)
+/* Creates -with malloc- a string that containd
+the first <len> bytes of <read> */
+char	*ft_getline(int len, char *read)
 {
-	void	*ptr;
-	char	*p;
-	size_t	i;
+	char	*line;
+	int		i;
 
+	line = malloc(len + 1);
 	i = 0;
-	ptr = malloc(size * count);
-	if (!ptr)
-		return (NULL);
-	p = (char *)ptr;
-	while (i < size * count)
+	while (i < len)
 	{
-		p[i] = 0;
+		line[i] = read[i];
 		i++;
 	}
-	return (ptr);
+	line[i] = '\0';
+	return (line);
 }
 
-size_t	ft_strlen(const char *s)
+/* Removes the first <len> bytes of <read> */
+char	*ft_clearline(int len, char *read)
 {
-	size_t	i;
+	char	*output;
+	int		i;
 
+	if (read == NULL || (ft_strlen(read) - len + 1) == 0)
+		return (NULL);
+	output = malloc(ft_strlen(read) - len + 1);
 	i = 0;
-	while (s[i] != 0)
+	while (read[len + i])
+	{
+		output[i] = read[len + i];
 		i++;
-	return (i);
+	}
+	output[i] = '\0';
+	free (read);
+	return (output);
+}
+
+// ---------------------------------------------------------------------
+// READ
+
+/* Reads BUFFER_SIZE bytes of the <fd> file,
+and adds it to the end of <oldread> */
+int	ft_newread(int fd, char **oldread)
+{
+	int		count;
+	char	newread[BUFFER_SIZE + 1];
+	char	*output;
+	int		i;
+	int		new_i;
+
+	count = read(fd, newread, BUFFER_SIZE);
+	newread[count] = '\0';
+	output = malloc(ft_strlen(*oldread) + count + 1);
+	if (!output)
+		return (-1);
+	i = 0;
+	while (oldread[0][i])
+	{	
+		output[i] = oldread[0][i];
+		i++;
+	}
+	new_i = 0;
+	while (newread[new_i])
+		output[i++] = newread[new_i++];
+	output[i] = '\0';
+	free(*oldread);
+	*oldread = output;
+	return (count);
 }
