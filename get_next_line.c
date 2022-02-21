@@ -3,78 +3,76 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: slucas-s <slucas-s@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mruizzo <mruizzo@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/04/21 16:04:47 by slucas-s          #+#    #+#             */
-/*   Updated: 2021/04/23 11:44:00 by slucas-s         ###   ########.fr       */
+/*   Created: 2022/02/11 15:19:48 by mruizzo           #+#    #+#             */
+/*   Updated: 2022/02/20 19:38:30 by mruizzo          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include "../libft/libft.h"
 
-/* Returs -1 if the params are invalid.
-If valid, returns 1 and sets <readbuff> to
-an empty string if it was null */
-int	validparams(int fd, char **line, char **readbuff)
+char	*get_line(char *save, int fd)
 {
-	if (*readbuff == NULL)
+	int		count;
+	char	*buffer;
+
+	count = 1;
+	if (!save)
+		save = ft_calloc(1, 1);
+	while (ft_strchr_gnl(save, '\n') == -1 && count > 0)
 	{
-		*readbuff = malloc(sizeof(char));
-		if (!*readbuff)
-			return (-1);
-		**readbuff = '\0';
+		buffer = ft_calloc(1, BUFFER_SIZE + 1);
+		count = read(fd, buffer, BUFFER_SIZE);
+		if (count < 0 || (count == 0 && save[0] == 0))
+		{
+			free(save);
+			free(buffer);
+			return (NULL);
+		}
+		save = ft_strjoin_gnl(save, buffer);
+		free(buffer);
 	}
-	if (fd < 0 || !line
-		|| BUFFER_SIZE <= 0 || fd > 4096)
-	{
-		free (*readbuff);
-		*readbuff = NULL;
-		return (-1);
-	}
-	return (1);
+	return (save);
 }
 
-int	end_of_read(int rdcount, char **readbuff, char **line)
+char	*ft_save(char *save, char *str)
 {
-	int	len;
+	char	*tmp;
+	size_t	i;
+	size_t	j;
 
-	if (rdcount == 0 && ft_strlen(*readbuff) <= 0)
+	i = 0;
+	j = 0;
+	while (str[i] != 0)
+		i++;
+	if (save[i] == 0)
 	{
-		free(*readbuff);
-		*readbuff = NULL;
-		*line = malloc(sizeof(char));
-		**line = '\0';
+		free(save);
+		return (NULL);
 	}
-	else if (rdcount == 0)
-	{
-		len = ft_strlen(*readbuff);
-		*line = ft_getline(len, *readbuff);
-		free(*readbuff);
-		*readbuff = NULL;
-	}
-	return (0);
+	tmp = ft_substr(save, i, ft_strlen_gnl(save) - i);
+	free(save);
+	save = ft_substr(tmp, 0, ft_strlen_gnl(tmp));
+	free (tmp);
+	return (save);
 }
 
-int	get_next_line(int fd, char **line)
+char	*get_next_line(int fd)
 {
-	static char	*readbuff;
-	int			linelen;
-	int			readcount;
+	static char	*line[1024];
+	char		*str_rtr;
+	size_t		i;
 
-	if (validparams(fd, line, &readbuff) < 0)
-		return (-1);
-	linelen = ft_linelen(readbuff);
-	while (linelen < 0)
-	{
-		readcount = ft_newread(fd, &readbuff);
-		if (!readbuff || readcount < 0)
-			return (-1);
-		else if (readcount == 0)
-			return (end_of_read(readcount, &readbuff, line));
-		linelen = ft_linelen(readbuff);
-	}
-	*line = ft_getline(linelen, readbuff);
-	readbuff = ft_clearline(linelen + 1, readbuff);
-	return (1);
+	i = 0;
+	if (fd < 0 || fd > 1024)
+		return (NULL);
+	line[fd] = get_line(line [fd], fd);
+	if (!line[fd])
+		return (NULL);
+	while (line[fd][i] != '\n' && line[fd][i])
+		i++;
+	str_rtr = ft_substr(line[fd], 0, i + 1);
+	line[fd] = ft_save(line[fd], str_rtr);
+	return (str_rtr);
 }
